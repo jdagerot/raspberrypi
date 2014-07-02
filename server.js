@@ -3,13 +3,13 @@ var gpio = require("pi-gpio");
 
 
 var lamps = [{
-		port: 7,
+		pin: 7,
 		color: "Röd"
 	}, {
-		port: 11,
+		pin: 11,
 		color: "Gul"
 	}, {
-		port: 13,
+		pin: 13,
 		color: "Grön"
 	},
 
@@ -38,6 +38,18 @@ function toggleLamp(pin, successCB) {
 }
 
 
+function getInitStatus(socket) {
+	for(lIDX in lamps) {
+		l = lamps[lIDX];
+		gpio.read(l.pin, function(err,state) {
+			socket.emit("status", {
+				pin: l.pin,
+				state: state
+			});
+		})
+	}
+}
+
 var express = require('express'),
 	app = express(),
 	http = require('http').Server(app),
@@ -55,6 +67,7 @@ app.get('/', function(req, res) {
 
 io.on('connection', function(socket) {
 	console.log('a user connected');
+	getInitStatus(socket);
 	socket.on('ToggleLamp', function(pin) {
 		toggleLamp(pin, function(pin, state) {
 			socket.emit("status", {
