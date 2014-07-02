@@ -15,18 +15,26 @@ var lamps = [{
 
 ];
 
+function logme(obj) {
+	console.log(obj);
+}
+
 
 function toggleLamp(pin, successCB) {
 	try {
-	gpio.read(pin, function(err, was) {
-		state = !was;
-		gpio.write(pin, state, function(){
-			successCB(pin, state);
+		logme("Toggle lamp on pin " + pin);
+		gpio.read(pin, function(err, was) {
+				var state = !was;
+				logme("Writing to pin " + pin + "=" + state);
+				gpio.write(pin, state, function(err) {
+					logme(pin + ": " + state);
+					successCB(pin, state);
+				});
 		});
-	});
-} catch(err) {
-	successCB("Error");
-}
+	} catch (err) {
+		logme(err);
+		successCB("Error");
+	}
 }
 
 
@@ -41,20 +49,26 @@ gpio.open(11, "out");
 gpio.open(13, "out");
 gpio.open(22, "in");
 
-app.get('/', function(req,res){
+app.get('/', function(req, res) {
 	res.sendfile("index.html");
 })
 
-io.on('connection', function(socket){
-  console.log('a user connected');
-  socket.on('ToggleLamp', function(pin) {
-	toggleLamp(pin, function(pin, state){
-		socket.emit("status", {pin:pin, state:state});
-		socket.broadcast.emit("status", {pin:pin, state:state})
-	});
-})
+io.on('connection', function(socket) {
+	console.log('a user connected');
+	socket.on('ToggleLamp', function(pin) {
+		toggleLamp(pin, function(pin, state) {
+			socket.emit("status", {
+				pin: pin,
+				state: state
+			});
+			socket.broadcast.emit("status", {
+				pin: pin,
+				state: state
+			})
+		});
+	})
 });
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
+http.listen(3000, function() {
+	console.log('listening on *:3000');
 });

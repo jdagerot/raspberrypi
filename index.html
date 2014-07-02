@@ -42,7 +42,7 @@
 			$("#lampsList > li > span.button").click(function(){
 				var $this = $(this);
 				var pin = $this.attr("data-pin");
-				console.log(pin);
+				console.log("Toggling pin" + pin);
 				socket.emit('ToggleLamp', pin);
 			});
 
