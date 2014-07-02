@@ -1,0 +1,39 @@
+var gpio = require("pi-gpio");
+
+var GREEN = 7;
+var YELLOW = 11;
+var RED = 13;
+
+
+
+
+var    express = require('express'),
+    app = express();
+
+console.log("Hit");
+
+gpio.open(7,"out");
+gpio.open(11,"out");
+gpio.open(13,"out");
+ 
+
+
+app.get('/', function(req, res){
+
+        var pin = (req.query['pin']);
+        var state = parseInt(req.query['status']);
+
+		gpio.read(pin, function(err, was) {
+                	state = !was;
+			gpio.write(pin,state);
+ 						var toggleButtons = "<a href='/7pin=11&status=1'>Grön</a>"
+ 						+ "<a href='/11pin=11&status=1'>Gul<a>"
+						+ "<a href='/11pin=11&status=1'>Röd<a>";
+
+		});
+
+});
+
+var server = app.listen(3000, function() {
+    console.log('Listening on port %d', server.address().port);
+});
