@@ -39,14 +39,19 @@ function toggleLamp(pin, successCB) {
 
 
 function getInitStatus(socket) {
-	for(lIDX in lamps) {
-		l = lamps[lIDX];
-		gpio.read(l.pin, function(err,state) {
-			socket.emit("status", {
-				pin: l.pin,
-				state: state
-			});
-		})
+	for(var lIDX in lamps) {
+
+		var l = lamps[lIDX];
+		var pin = l.pin;
+		(function(pin) {
+			gpio.read(pin, function(err,state) {
+				socket.emit("status", {
+					pin: pin,
+					state: state
+				});
+			})
+		})(pin)
+
 	}
 }
 

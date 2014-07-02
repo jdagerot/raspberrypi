@@ -8,13 +8,15 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<!-- Bootstrap CSS -->
 		<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" media="screen">
+
 	</head>
 	<body>
-		<h1 class="text-center">Toggle LEDs</h1>
+		<h1 class="text-center">Ändra lysdioder</h1>
 
-		<ul id="lampsList">
+		<div class="container-fluid">
+			<div class="row" id="lampsList"></div>
 
-		</ul>
+		</div>
 		<!-- jQuery -->
 		<script src="//code.jquery.com/jquery.js"></script>
 		<!-- Bootstrap JavaScript -->
@@ -23,23 +25,23 @@
 		<script>
 			var socket = io();
 			var lamps = [
-				{color:"Green", pin:13},
-				{color:"Red", pin:11},
-				{color:"Blue", pin:7}
+				{color:"Röd", pin:11, css : "background-color:#990000; color:#FFFFFF"},
+				{color:"Grön", pin:13, css : "background-color:#009900; color:#FFFFFF"},
+				{color:"Blå", pin:7, css : "background-color:#333399; color:#FFFFFF"}
 			];
 
 			// WriteUp
 
 			$.each(lamps, function(idx,lamp) {
 				$("#lampsList").append(
-'					<li>'
-+'						<span data-pin="' + lamp.pin + '" data-color="' + lamp.color + '" class="button">Toggle ' + lamp.color + '</button>'
+'					<div class="col-xs-4">'
++'						<button data-pin="' + lamp.pin + '" data-color="' + lamp.color + '" class="btn btn-lg" style="' + lamp.css + '"></button>'
 +'						<span class="state"></span>'
-+'					</li>'
++'					</div>'
 				);
 			});
 
-			$("#lampsList > li > span.button").click(function(){
+			$("#lampsList > div > button").click(function(){
 				var $this = $(this);
 				var pin = $this.attr("data-pin");
 				console.log("Toggling pin" + pin);
@@ -48,18 +50,13 @@
 
 			socket.on("status", function(args){
 
-				var obj = $("span[data-pin='" + args.pin + "']");
-				obj.html("Toggle " + obj.attr("data-color") + ": " + args.state);
+				var obj = $("button[data-pin='" + args.pin + "']");
+				obj.html(obj.attr("data-color") + ": " + (args.state ? " Lyser " : " Lyser inte "));
 				console.log("status change");
 				console.log(args);
 
 			});
 
-			$("#test").click(function(){
-				console.log("Clicking");
-				socket.emit('ToggleLamp', 13);
-				return false;
-			});
 
 		</script>
 
