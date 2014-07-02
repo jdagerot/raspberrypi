@@ -1,7 +1,6 @@
 var gpio = require("pi-gpio");
 
-
-
+// The "grid" of LEDs
 var lamps = [{
 		pin: 7,
 		color: "Röd"
@@ -15,11 +14,13 @@ var lamps = [{
 
 ];
 
+// Eases up when going to production
 function logme(obj) {
 	console.log(obj);
 }
 
 
+// Called with two arguments, the pin and a callback
 function toggleLamp(pin, successCB) {
 	try {
 		logme("Toggle lamp on pin " + pin);
@@ -37,12 +38,9 @@ function toggleLamp(pin, successCB) {
 	}
 }
 
-
+// This is used once, when the client connects
 function getInitStatus(socket) {
 	for(var lIDX in lamps) {
-
-		var l = lamps[lIDX];
-		var pin = l.pin;
 		(function(pin) {
 			gpio.read(pin, function(err,state) {
 				socket.emit("status", {
@@ -50,28 +48,31 @@ function getInitStatus(socket) {
 					state: state
 				});
 			})
-		})(pin)
+		})( lamps[lIDX].pin)
 
 	}
 }
 
+
+// Server setup
 var express = require('express'),
 	app = express(),
 	http = require('http').Server(app),
 	io = require('socket.io')(http);
 
-
+// Open up the GPIO-ports.
 gpio.open(7, "out");
 gpio.open(11, "out");
 gpio.open(13, "out");
-gpio.open(22, "in");
 
 app.get('/', function(req, res) {
 	res.sendfile("index.html");
 })
 
+
+// Setting upp socket.io....
 io.on('connection', function(socket) {
-	console.log('a user connected');
+	console.log('a user connected, starting init task');
 	getInitStatus(socket);
 	socket.on('ToggleLamp', function(pin) {
 		toggleLamp(pin, function(pin, state) {
@@ -87,6 +88,7 @@ io.on('connection', function(socket) {
 	})
 });
 
+// Here we go.
 http.listen(3000, function() {
 	console.log('listening on *:3000');
 });
