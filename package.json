@@ -1,0 +1,33 @@
+{
+  "name": "traficlight.js",
+  "version": "0.0.1",
+  "description": "Fiddling around with raspberry I/O and telldus",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.4.5",
+    "jade": "^1.3.1",
+    "nodemon": "^1.2.0",
+    "pi-gpio": "^0.0.5",
+    "q": "^1.0.1",
+    "socket.io": "^1.0.6",
+    "stylus": "^0.46.3",
+    "telldus": "^0.0.7",
+    "telldus-core-js": "^0.0.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jdagerot/raspberrypi.git"
+  },
+  "keywords": [
+    "raspberry",
+    "PI",
+    "telldus",
+    "node.js"
+  ],
+  "author": "Joachim Dagerot",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jdagerot/raspberrypi/issues"
+  },
+  "homepage": "https://github.com/jdagerot/raspberrypi"
+}
