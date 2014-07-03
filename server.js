@@ -28,7 +28,6 @@ function toggleLamp(pin, successCB) {
 				var state = !was;
 				logme("Writing to pin " + pin + "=" + state);
 				gpio.write(pin, state, function(err) {
-					logme(pin + ": " + state);
 					successCB(pin, state);
 				});
 		});
@@ -39,7 +38,7 @@ function toggleLamp(pin, successCB) {
 }
 
 // This is used once, when the client connects
-function getInitStatus(socket) {
+function sendInitData(socket) {
 	for(var lIDX in lamps) {
 		(function(pin) {
 			gpio.read(pin, function(err,state) {
@@ -65,6 +64,8 @@ gpio.open(7, "out");
 gpio.open(11, "out");
 gpio.open(13, "out");
 
+app.use(express.static(__dirname + '/public'));
+
 app.get('/', function(req, res) {
 	res.sendfile("index.html");
 })
@@ -73,17 +74,13 @@ app.get('/', function(req, res) {
 // Setting upp socket.io....
 io.on('connection', function(socket) {
 	console.log('a user connected, starting init task');
-	getInitStatus(socket);
+	sendInitData(socket);
 	socket.on('ToggleLamp', function(pin) {
 		toggleLamp(pin, function(pin, state) {
 			socket.emit("status", {
 				pin: pin,
 				state: state
 			});
-			socket.broadcast.emit("status", {
-				pin: pin,
-				state: state
-			})
 		});
 	})
 });

@@ -8,14 +8,20 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<!-- Bootstrap CSS -->
 		<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" media="screen">
+		<style>
+			.bulb {background-image:url('/img/Black-Light-Bulb-128.png');height:128px;width:128px;color:#FFFFFF;}
+			.bulb-red {background-color:#990000}
+			.bulb-green {background-color:#009900}
+			.bulb-blue  {background-color:#333399}
+			.bulb-active {background-image:url('/img/Black-Light-Bulb-128_active.png')
 
+		</style>
 	</head>
 	<body>
 		<h1 class="text-center">Ändra lysdioder</h1>
 
 		<div class="container-fluid">
 			<div class="row" id="lampsList"></div>
-
 		</div>
 		<!-- jQuery -->
 		<script src="//code.jquery.com/jquery.js"></script>
@@ -25,9 +31,9 @@
 		<script>
 			var socket = io();
 			var lamps = [
-				{color:"Röd", pin:11, css : "background-color:#990000; color:#FFFFFF"},
-				{color:"Grön", pin:13, css : "background-color:#009900; color:#FFFFFF"},
-				{color:"Blå", pin:7, css : "background-color:#333399; color:#FFFFFF"}
+				{color:"Röd", pin:11, css : "bulb-red"},
+				{color:"Grön", pin:13, css : "bulb-green"},
+				{color:"Blå", pin:7, css : "bulb-blue"}
 			];
 
 			// WriteUp
@@ -35,7 +41,7 @@
 			$.each(lamps, function(idx,lamp) {
 				$("#lampsList").append(
 '					<div class="col-xs-4">'
-+'						<button data-pin="' + lamp.pin + '" data-color="' + lamp.color + '" class="btn btn-lg" style="' + lamp.css + '"></button>'
++'						<button data-pin="' + lamp.pin + '" data-color="' + lamp.color + '" class="bulb + ' + lamp.css + '"></button>'
 +'						<span class="state"></span>'
 +'					</div>'
 				);
@@ -49,9 +55,9 @@
 			});
 
 			socket.on("status", function(args){
-
 				var obj = $("button[data-pin='" + args.pin + "']");
 				obj.html(obj.attr("data-color") + ": " + (args.state ? " Lyser " : " Lyser inte "));
+				obj.toggleClass("bulb-active",args.state);
 				console.log("status change");
 				console.log(args);
 
