@@ -1,7 +1,8 @@
 var gpio = require("pi-gpio");
-
+var telldus = require('telldus');
 // The "grid" of LEDs
-var lamps = [{
+var lamps = {
+	"diods": [{
 		pin: 7,
 		color: "Röd"
 	}, {
@@ -10,9 +11,14 @@ var lamps = [{
 	}, {
 		pin: 13,
 		color: "Grön"
-	},
 
-];
+	}],
+	"telldus": {
+		name: "Höglampa vardagsrum",
+		type: "telldus"
+	}
+
+};
 
 // Eases up when going to production
 function logme(obj) {
@@ -25,11 +31,11 @@ function toggleLamp(pin, successCB) {
 	try {
 		logme("Toggle lamp on pin " + pin);
 		gpio.read(pin, function(err, was) {
-				var state = !was;
-				logme("Writing to pin " + pin + "=" + state);
-				gpio.write(pin, state, function(err) {
-					successCB(pin, state);
-				});
+			var state = !was;
+			logme("Writing to pin " + pin + "=" + state);
+			gpio.write(pin, state, function(err) {
+				successCB(pin, state);
+			});
 		});
 	} catch (err) {
 		logme(err);
@@ -39,15 +45,16 @@ function toggleLamp(pin, successCB) {
 
 // This is used once, when the client connects
 function sendInitData(socket) {
-	for(var lIDX in lamps) {
+	for (var lIDX in lamps.diods) {
 		(function(pin) {
-			gpio.read(pin, function(err,state) {
+			gpio.read(pin, function(err, state) {
+				logme("Init sending pin" + pin + " state " + (state ? true : false));
 				socket.emit("status", {
 					pin: pin,
-					state: state
+					state: state ? true : false
 				});
 			})
-		})( lamps[lIDX].pin)
+		})(lamps.diods[lIDX].pin)
 
 	}
 }
@@ -75,17 +82,49 @@ app.get('/', function(req, res) {
 io.on('connection', function(socket) {
 	console.log('a user connected, starting init task');
 	sendInitData(socket);
-	socket.on('ToggleLamp', function(pin) {
+	socket.on('ToggleLamp', function(pin, type) {
 		toggleLamp(pin, function(pin, state) {
 			socket.emit("status", {
 				pin: pin,
 				state: state
 			});
+			socket.broadcast.emit("status", {
+				pin: pin,
+				state: state
+			});
 		});
-	})
+	});
+
+
+	socket.on("BigLamp", function(args) {
+		var deviceId = 1;
+		logme("Got a BigLamp request");
+		if(args==true) {
+		telldus.turnOn(deviceId, function(err) {
+			if (err) {
+				console.log(err);
+			} else {
+				console.log('deviceId is now ON');
+			}
+
+		});
+		} else {
+		telldus.turnOff(deviceId, function(err) {
+			if (err) {
+				console.log(err);
+			} else {
+				console.log('deviceId is now ON');
+			}
+
+		});			
+		}
+
+
+
+	});
 });
 
 // Here we go.
-http.listen(3000, function() {
-	console.log('listening on *:3000');
+http.listen(8080, function() {
+	console.log('listening on *:8080');
 });
