@@ -2,10 +2,10 @@
 /node_modules
 .DS_Store
 /.idea
-/customerservice.iml
+/*.iml
 db-calls-scrapboard
-beertaste.sublime-project
-beertaste.sublime-workspace
+*.sublime-project
+*.sublime-workspace
 deplist.txt
 dump.json
 openbeerdata.txt
