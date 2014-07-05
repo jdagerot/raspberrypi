@@ -1,5 +1,6 @@
-var gpio = require("pi-gpio");
-var telldus = require('telldus');
+var gpio = require("pi-gpio"),
+	telldus = require('telldus'),
+	q = require('q');
 
 /**
 device {
@@ -44,12 +45,15 @@ var lamps = {
 	"4": {
 		pin: 1, // This equivalents to ID in the telldus world
 		name: "Höglampa vardagsrum",
-		type: "tellfus"
+		type: "telldus",
+		css: "bulb-yellow"
 	}
 
 };
 
-var devices = lamps; // We should not call it lamps in the future...
+//todo 1 (general) +0:  We should not use "lamps" as a variable in the future
+var devices = lamps;
+
 
 // Eases up when going to production
 function logme(obj) {
@@ -58,49 +62,27 @@ function logme(obj) {
 
 
 // Called with two arguments, the pin and a callback
-function toggleDevice(deviceID, successCB) {
+function toggleLamp(deviceId, successCB) {
 	try {
-		logme("Toggle device " + deviceID);
-		device = devices[deviceID];
+		logme("Toggle device " + deviceId);
+		device = devices[deviceId];
 		if (device.type == "gpio") {
-			gpio.read(device.deviceID, function(err, was) {
+			gpio.read(device.pin, function(err, was) {
 				var state = !was;
-				logme("Writing to pin " + device.deviceID + "=" + state);
+				logme("Writing to pin " + device.pin + "=" + state);
 				gpio.write(device.pin, state, function(err) {
-					successCB(device.deviceID, state);
+					successCB(device.deviceId, state);
 				});
 			});
 		} else if (device.type == "telldus") {
-			telldus.turnOn(deviceID, function(err) {
-				if (err) {
-					console.log(err);
-				} else {
-					console.log('deviceID is now ON');
-				}
-
-			});
+			//todo 2 (general) +0: Add support for telldus devices
 		}
+
 	} catch (err) {
 		logme(err);
 		successCB("Error");
 	}
 }
-
-function updateStateForAllDevices() {
-	for (var index in devices) {
-		(function(index) {
-			var device = devices[index];
-			if (device.type == "gpio") {
-				gpio.read(device.pin, function(err, state) {
-					device.state = state ? true : false
-				})
-			} else if(device.type=="telldus"){
-				/// TODO: Fix status for telldus devices
-			}
-		})(index)
-	}
-}
-
 
 
 // Server setup
@@ -110,6 +92,7 @@ var express = require('express'),
 	io = require('socket.io')(http);
 
 // Open up the GPIO-ports.
+//todo 3 (general) +0: Make this aware of the devices list
 gpio.open(7, "out");
 gpio.open(11, "out");
 gpio.open(13, "out");
@@ -117,7 +100,7 @@ gpio.open(13, "out");
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res) {
-	res.sendfile("public/index.html");
+	res.sendfile("index.html");
 })
 
 
@@ -125,24 +108,21 @@ app.get('/', function(req, res) {
 io.on('connection', function(socket) {
 	console.log('a user connected, starting init task');
 
-	// Connection setup
 	socket.emit("init", devices);
-
-	//Turning on/off
-	socket.on('toggleDevice', function(deviceID) {
-		toggleDevice(deviceID, function(deviceID, state) {
+	socket.on('ToggleLamp', function(pin, type) {
+		toggleLamp(pin, function(pin, state) {
 			socket.emit("status", {
-				deviceID: deviceID,
 				pin: pin,
 				state: state
 			});
 			socket.broadcast.emit("status", {
-				deviceID: state,
 				pin: pin,
 				state: state
 			});
 		});
 	});
+
+
 });
 
 // Here we go.
