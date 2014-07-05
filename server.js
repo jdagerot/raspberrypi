@@ -1,24 +1,55 @@
 var gpio = require("pi-gpio");
 var telldus = require('telldus');
+
+/**
+device {
+  id = 1
+  name = "Höglampa vardagsrum"
+  controller = 0
+  protocol = "arctech"
+  model = "codeswitch"
+  parameters {
+    # devices = ""
+    house = "A"
+    unit = "1"
+    # code = ""
+    # system = ""
+    # units = ""
+    # fade = ""
+  }
+}
+*/
+
 // The "grid" of LEDs
 var lamps = {
-	"diods": [{
+	"1": {
 		pin: 7,
-		color: "Röd"
-	}, {
+		color: "Blå",
+		css: "bulb-blue",
+		type: "gpio"
+	},
+	"2": {
 		pin: 11,
-		color: "Gul"
-	}, {
+		color: "Red",
+		css: "bulb-red",
+		type: "gpio"
+	},
+	"3": {
 		pin: 13,
-		color: "Grön"
+		color: "Grön",
+		css: "bulb-green",
+		type: "gpio"
 
-	}],
-	"telldus": {
+	},
+	"4": {
+		pin: 1, // This equivalents to ID in the telldus world
 		name: "Höglampa vardagsrum",
-		type: "telldus"
+		type: "tellfus"
 	}
 
 };
+
+var devices = lamps; // We should not call it lamps in the future...
 
 // Eases up when going to production
 function logme(obj) {
@@ -27,37 +58,49 @@ function logme(obj) {
 
 
 // Called with two arguments, the pin and a callback
-function toggleLamp(pin, successCB) {
+function toggleDevice(deviceID, successCB) {
 	try {
-		logme("Toggle lamp on pin " + pin);
-		gpio.read(pin, function(err, was) {
-			var state = !was;
-			logme("Writing to pin " + pin + "=" + state);
-			gpio.write(pin, state, function(err) {
-				successCB(pin, state);
+		logme("Toggle device " + deviceID);
+		device = devices[deviceID];
+		if (device.type == "gpio") {
+			gpio.read(device.deviceID, function(err, was) {
+				var state = !was;
+				logme("Writing to pin " + device.deviceID + "=" + state);
+				gpio.write(device.pin, state, function(err) {
+					successCB(device.deviceID, state);
+				});
 			});
-		});
+		} else if (device.type == "telldus") {
+			telldus.turnOn(deviceID, function(err) {
+				if (err) {
+					console.log(err);
+				} else {
+					console.log('deviceID is now ON');
+				}
+
+			});
+		}
 	} catch (err) {
 		logme(err);
 		successCB("Error");
 	}
 }
 
-// This is used once, when the client connects
-function sendInitData(socket) {
-	for (var lIDX in lamps.diods) {
-		(function(pin) {
-			gpio.read(pin, function(err, state) {
-				logme("Init sending pin" + pin + " state " + (state ? true : false));
-				socket.emit("status", {
-					pin: pin,
-					state: state ? true : false
-				});
-			})
-		})(lamps.diods[lIDX].pin)
-
+function updateStateForAllDevices() {
+	for (var index in devices) {
+		(function(index) {
+			var device = devices[index];
+			if (device.type == "gpio") {
+				gpio.read(device.pin, function(err, state) {
+					device.state = state ? true : false
+				})
+			} else if(device.type=="telldus"){
+				/// TODO: Fix status for telldus devices
+			}
+		})(index)
 	}
 }
+
 
 
 // Server setup
@@ -74,53 +117,31 @@ gpio.open(13, "out");
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res) {
-	res.sendfile("index.html");
+	res.sendfile("public/index.html");
 })
 
 
 // Setting upp socket.io....
 io.on('connection', function(socket) {
 	console.log('a user connected, starting init task');
-	sendInitData(socket);
-	socket.on('ToggleLamp', function(pin, type) {
-		toggleLamp(pin, function(pin, state) {
+
+	// Connection setup
+	socket.emit("init", devices);
+
+	//Turning on/off
+	socket.on('toggleDevice', function(deviceID) {
+		toggleDevice(deviceID, function(deviceID, state) {
 			socket.emit("status", {
+				deviceID: deviceID,
 				pin: pin,
 				state: state
 			});
 			socket.broadcast.emit("status", {
+				deviceID: state,
 				pin: pin,
 				state: state
 			});
 		});
-	});
-
-
-	socket.on("BigLamp", function(args) {
-		var deviceId = 1;
-		logme("Got a BigLamp request");
-		if(args==true) {
-		telldus.turnOn(deviceId, function(err) {
-			if (err) {
-				console.log(err);
-			} else {
-				console.log('deviceId is now ON');
-			}
-
-		});
-		} else {
-		telldus.turnOff(deviceId, function(err) {
-			if (err) {
-				console.log(err);
-			} else {
-				console.log('deviceId is now ON');
-			}
-
-		});			
-		}
-
-
-
 	});
 });
 
