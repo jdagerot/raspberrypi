@@ -26,13 +26,24 @@ $(document).ready(function() {
 
 	// This gets a list of all devices
 	socket.on("init", function(devices) {
+		$("#lampsList").html('');
 		for (var deviceID in devices) {
 			var device = devices[deviceID];
 			$("#lampsList").append(
 				'<div class="col-xs-3"><div data-deviceId="' + deviceID + '" data-color="' + device.color + '" class="bulb ' + device.css + '">&nbsp;</div>' + '<span class="state"></span>' + '</div></div>'
 			);
+			if(device.state) {
+				var obj = $("div.bulb[data-deviceId='" + device.deviceId + "']").addClass("bulb-active");
+			}
 		}
 
+	});
+
+	socket.on("connect", function(){
+		$("#connectionStatus").html("WE ARE CONNECTED");
+	});
+	socket.on("disconnect", function(){
+		$("#connectionStatus").html("WE ARE DISCONNECTED");
 	});
 });
 

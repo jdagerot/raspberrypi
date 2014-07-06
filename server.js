@@ -22,25 +22,25 @@ device {
 */
 
 // The "grid" of LEDs
-var lamps = {
+var devices = {
 	"1": {
 		pin: 7,
-		color: "Blå",
-		css: "bulb-blue",
+		name: "Röd",
+		css: "bulb-red",
 		type: "gpio",
 		deviceId: 1
 	},
 	"2": {
 		pin: 11,
-		color: "Red",
-		css: "bulb-red",
+		name: "Grön",
+		css: "bulb-green",
 		type: "gpio",
 		deviceId: 2
 	},
 	"3": {
 		pin: 13,
-		color: "Grön",
-		css: "bulb-green",
+		name: "Gul",
+		css: "bulb-yellow",
 		type: "gpio",
 		deviceId: 3
 
@@ -49,19 +49,18 @@ var lamps = {
 		pin: 1, // This equivalents to ID in the telldus world
 		name: "Höglampa vardagsrum",
 		type: "telldus",
-		css: "bulb-yellow",
+		css: "bulb-blue",
 		deviceId: 4
 	}
 
 };
 
-//todo 1 (general) +0:  We should not use "lamps" as a variable in the future
-var devices = lamps;
 
-for(d in devices) {
+// Open up all ports
+for (d in devices) {
 	device = devices[d];
-	if(device.type=="gpio") {
-		gpio.open(device.pin,"out");
+	if (device.type == "gpio") {
+		gpio.open(device.pin, "out");
 	}
 }
 
@@ -74,8 +73,8 @@ function logme() {
 function openGPIOPromise(device) {
 	var deferred = Q.defer();
 	gpio.open(device.pin, "out", function(err) {
-		if(err) {
-			deferred.resolve(device);
+		if (err) {
+			deferred.reject(device);
 		} else {
 			deferred.resolve(device);
 		}
@@ -86,7 +85,7 @@ function openGPIOPromise(device) {
 function closeGPIOPromise(device) {
 	var deferred = Q.defer();
 	gpio.close(device.pin, function(err) {
-		if(err) {
+		if (err) {
 			deferred.resolve(device);
 		} else {
 			deferred.resolve(device);
@@ -113,9 +112,9 @@ function readGPIOPromise(device) {
 function writeGPIOPromise(device) {
 
 	var deferred = Q.defer();
-	console.log("About to write %s to %s", device.state, device.color)
+	console.log("About to write %s to %s", device.state, device.name)
 	gpio.write(device.pin, device.state, function(err) {
-		console.log("Done writing %s to pin %s on device %s", device.state, device.pin, device.color);
+		console.log("Done writing %s to pin %s on device %s", device.state, device.pin, device.name);
 		deferred.resolve(device);
 	});
 	return deferred.promise;
@@ -130,14 +129,42 @@ function invertState(device) {
 }
 
 function checkStatusForAll() {
+	var deferred = Q.defer();
+	var calls = 0;
+	// Open up all ports
+	for (d in devices) {
+		var device = devices[d];
 
+		(function(device) {
+			if (device.type == "gpio") {
+				calls++;
+				gpio.read(device.pin, function(err, value) {
+					device.state = value == true;
+					calls--;
+					if (calls == 0) {
+						console.log("Status updated for all....");
+						console.dir(devices);
+						deferred.resolve();
+					}
+				})
+			}
+
+
+
+		}(device))
+	}
+	return deferred.promise;
 }
 
-
-// Called with two arguments, the pin and a callback
-function toggleLamp(deviceId) {
+/**
+ * Reads the current status and toogle it
+ * @param  string|object device or deviceId
+ * @return A primise
+ */
+function toggleLamp(arg) {
 	var deferred = Q.defer();
-	var device = devices[deviceId];
+
+	var device = typeof arg != "object" ? devices[arg] : arg;
 	if (device.type == "gpio") {
 		try {
 			readGPIOPromise(device)
@@ -162,15 +189,16 @@ var express = require('express'),
 	http = require('http').Server(app),
 	io = require('socket.io')(http);
 
-// Open up the GPIO-ports.
-//todo 3 (general) +0: Make this aware of the devices list
-
+// For static files
 app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res) {
 	res.sendfile("index.html");
 })
 
+
+// Check status on all devices:
+checkStatusForAll();
 
 // Setting upp socket.io....
 io.on('connection', function(socket) {
