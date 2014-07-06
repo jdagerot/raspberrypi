@@ -179,6 +179,7 @@ function toggleLamp(arg) {
 		telldus.turnOn(device.deviceId,function(err) {
   			console.log('deviceId is now ON');
 		});
+		
 
 		deferred.reject();
 	}
