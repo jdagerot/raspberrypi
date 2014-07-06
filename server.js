@@ -176,6 +176,10 @@ function toggleLamp(arg) {
 		}
 	} else if (device.type == "telldus") {
 		//todo 2 (general) +0: Add support for telldus devices
+		telldus.turnOn(device.deviceId,function(err) {
+  			console.log('deviceId is now ON');
+		});
+
 		deferred.reject();
 	}
 	return deferred.promise;

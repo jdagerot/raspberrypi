@@ -4,7 +4,40 @@ var socket = io();
 function logme() {
 	console.log(arguments);
 }
+function svgLoaded() {
+	var svgEmbed = document.querySelector("#svgObject");
+	var svgDocument = svgEmbed.getSVGDocument();
 
+$("[id='rect4132']", svgDocument).each(function(){
+
+	style = $(this).attr("style");
+	styles = style.split(";");
+	console.log(styles);
+	var newStyle = {};
+	for(s in styles) {
+		var sp = styles[s].split(":");
+		console.log(sp);
+		newStyle[sp[0]] = sp[1]; 
+	}
+
+	newStyle.fill = "#FF0000";
+
+	var style = "";
+	for(s in newStyle) {
+		ns = newStyle[s];
+		style += s + ":" + ns + ";";
+	}
+
+	console.log(style);
+	$(this).attr("style",style);
+
+});
+	$(svgEmbed).attr("viewBox","0 0 128 128");
+	$(svgEmbed).attr("height",128);
+	$(svgEmbed).attr("width",128);
+	svgDocument.scale(20);
+	console.log(	$("svg",svgDocument).attr("width"))
+}
 $(document).ready(function() {
 	$("#lampsList").on("click", "div>div", function() {
 		logme("Sending toggle event");
@@ -45,5 +78,12 @@ $(document).ready(function() {
 	socket.on("disconnect", function(){
 		$("#connectionStatus").html("WE ARE DISCONNECTED");
 	});
+
+	var svgEmbed = document.querySelector("#svgObject");
+	svgEmbed.addEventListener("load", svgLoaded);
+
+
 });
+
+
 
