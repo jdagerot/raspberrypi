@@ -71,26 +71,6 @@ function logme() {
 	console.log(a, a);
 }
 
-function one() {
-	var deferred = Q.defer();
-	setTimeout(function(){console.log("step 1"); deferred.resolve}, 100);
-	return deferred.promise;
-}
-
-
-function two() {
-	var deferred = Q.defer();
-	setTimeout(function(){console.log("step 2"); deferred.resolve}, 100);
-	return deferred.promise;
-}
-
-
-function three() {
-	var deferred = Q.defer();
-	setTimeout(function(){console.log("step 3"); deferred.resolve}, 100);
-	return deferred.promise;
-}
-
 function openGPIOPromise(device) {
 	var deferred = Q.defer();
 	gpio.open(device.pin, "out", function(err) {
