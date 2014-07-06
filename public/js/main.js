@@ -1,13 +1,17 @@
 var socket = io();
 
 
+function logme() {
+	console.log(arguments);
+}
+
 $(document).ready(function() {
 	$("#lampsList").on("click", "div>div", function() {
-		console.log("Sending toggle event");
+		logme("Sending toggle event");
 		var $this = $(this);
-		console.log($this);
+		logme($this);
 		var deviceId = $this.attr("data-deviceId");
-		console.log("Toggling pin" + deviceId);
+		logme("Toggling pin" + deviceId);
 		socket.emit('ToggleLamp', deviceId);
 	});
 
@@ -17,9 +21,6 @@ $(document).ready(function() {
 		var obj = $("div.bulb[data-deviceId='" + args.deviceId + "']");
 		//obj.html(obj.attr("data-color") + ": " + (args.state ? " Lyser " : " Lyser inte "));
 		obj.toggleClass("bulb-active", args.state);
-		console.log("status change");
-		console.log(args);
-
 	});
 
 
@@ -34,3 +35,4 @@ $(document).ready(function() {
 
 	});
 });
+
