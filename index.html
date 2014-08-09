@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="">
+	<head>
+		<title>Title Page</title>
+		<meta charset="UTF-8">
+		<meta name=description content="">
+		<meta name=viewport content="width=device-width, initial-scale=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<!-- Bootstrap CSS -->
+		<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" media="screen">
+		<link href="/css/bootstrap-switch.min.css" rel="stylesheet">
+
+		<style>
+			.bulb {background-image:url('/img/Black-Light-Bulb-128.png');height:128px;width:128px;color:#FFFFFF;}
+			.bulb-red {background-color:#990000}
+			.bulb-green {background-color:#009900}
+			.bulb-blue  {background-color:#333399}
+			.bulb-active {background-image:url('/img/Black-Light-Bulb-128_active.png')
+
+		</style>
+	</head>
+	<body>
+		<h1 class="text-center">Fjärrkontrollera mera!</h1>
+
+		<div class="container-fluid">
+			<div class="row" id="lampsList"></div>
+			<div class="row" id="telldusList">
+
+				Storlampan <input id="bigLamp" type="checkbox" name="my-checkbox" id="Storlampan" checked="checked">
+			</div>
+		</div>
+		<!-- jQuery -->
+		<script src="//code.jquery.com/jquery.js"></script>
+		<!-- Bootstrap JavaScript -->
+		<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="/js/bootstrap-switch.min.js"></script>
+		<script>
+
+			var socket = io();
+			var lamps = [
+				{color:"Röd", pin:11, css : "bulb-red"},
+				{color:"Grön", pin:13, css : "bulb-green"},
+				{color:"Blå", pin:7, css : "bulb-blue"}
+			];
+
+			// WriteUp
+
+			$.each(lamps, function(idx,lamp) {
+				$("#lampsList").append(
+					'<div class="col-xs-4"><div data-pin="'
+					+ lamp.pin + '" data-color="' 
+					+ lamp.color + '" class="bulb ' + lamp.css + '">&nbsp;</div>'
+					+ '<span class="state"></span>'
+					+'</div></div>'
+				);
+			});
+
+			$(".bulb").click(function(){
+				var $this = $(this);
+				var pin = $this.attr("data-pin");
+				console.log("Toggling pin" + pin);
+				socket.emit('ToggleLamp', pin);
+			});
+
+
+
+			socket.on("status", function(args){
+				var obj = $("div.bulb[data-pin='" + args.pin + "']");
+				//obj.html(obj.attr("data-color") + ": " + (args.state ? " Lyser " : " Lyser inte "));
+				obj.toggleClass("bulb-active",args.state);
+				console.log("status change");
+				console.log(args);
+
+			});
+			$("[name='my-checkbox']").bootstrapSwitch();
+			$('input[name="my-checkbox"]').on('switchChange.bootstrapSwitch', function(event, state) {
+			  console.log(state); // true | false
+			  socket.emit("BigLamp", state);
+
+			});
+		</script>
+		
+	</body>
+</html>
